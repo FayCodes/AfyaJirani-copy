@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 
 interface AuthContextType {
   user: any;
-  signUp: (email: string, password: string, role: string) => Promise<any>;
+  signUp: (email: string, password: string, role: string, hospital_id?: string) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
   loading: boolean;
@@ -30,12 +30,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signUp = async (email: string, password: string, role: string) => {
+  const signUp = async (email: string, password: string, role: string, hospital_id?: string) => {
+    const userData: any = { role };
+    if (hospital_id) userData.hospital_id = hospital_id;
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { role },
+        data: userData,
       },
     });
     return { data, error };

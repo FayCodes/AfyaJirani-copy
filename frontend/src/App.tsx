@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -22,7 +22,7 @@ import TextField from '@mui/material/TextField';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
-import { useState } from 'react';
+import { useEffect } from 'react';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import MapIcon from '@mui/icons-material/Map';
 import List from '@mui/material/List';
@@ -45,6 +45,23 @@ import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import HospitalRegistrationForm from './HospitalRegistrationForm';
+import AdminDashboard from './AdminDashboard';
+import UnifiedDashboard from './UnifiedDashboard';
+import MenuIcon from '@mui/icons-material/Menu';
+import Menu from '@mui/material/Menu';
+import Drawer from '@mui/material/Drawer';
+import HomeIcon from '@mui/icons-material/Home';
+import PeopleIcon from '@mui/icons-material/People';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import CommunityDashboard from './CommunityDashboard';
+import DoctorDashboard from './DoctorDashboard';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 
 // Mock API service
 const mockApi = {
@@ -84,6 +101,9 @@ function ErrorAlert({ message }: { message: string }) {
 
 // Placeholder components for each page
 function Home() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  // Remove the dashboard icon from the hero banner
   return (
     <Box>
       {/* Hero Banner Section - Banner with Content Below */}
@@ -105,6 +125,7 @@ function Home() {
             display: 'block',
           }}
         />
+        {/* Removed dashboard icon here */}
       </Box>
       {/* Tagline and Buttons Below Banner */}
       <Box
@@ -131,7 +152,10 @@ function Home() {
           <Button variant="outlined" color="primary" component={Link} to="/community" size="large">
             For Community
           </Button>
-          <Button variant="text" color="primary" component={Link} to="/about" size="large">
+          <Button variant="outlined" color="secondary" component={Link} to="/register-hospital" size="large">
+            Hospitals: Apply for Access
+          </Button>
+          <Button variant="contained" color="info" component={Link} to="/about" size="large">
             Learn More
           </Button>
         </Stack>
@@ -182,40 +206,136 @@ function Community() {
 }
 function About() {
   return (
-    <Box sx={{ mt: 4, maxWidth: 700, mx: 'auto', px: 2 }}>
-      <Typography variant="h4" sx={{ mb: 2, color: '#1976d2' }}>About AfyaJirani</Typography>
-      <Box
-        component="img"
-        src="/about.jpg"
-        alt="About AfyaJirani"
-        sx={{
-          width: '100%',
-          maxHeight: 320,
-          objectFit: 'cover',
-          borderRadius: 3,
-          boxShadow: 3,
-          mb: 3,
-          display: 'block',
-        }}
-      />
-      <Typography variant="body1" sx={{ mb: 3 }}>
-        AfyaJirani empowers communities and healthcare providers with timely, localized alerts and actionable advice during disease outbreaks—using AI, real-time data, and accessible technology. Our mission is to save lives, inform the public, and support healthcare professionals with the tools they need to respond quickly and effectively.
-      </Typography>
-      <Typography variant="h5" sx={{ mb: 2, color: '#43a047' }}>How It Works</Typography>
-      <Typography variant="body1" sx={{ mb: 3 }}>
-        Healthcare professionals securely report cases. The system analyzes trends and predicts risks using AI and environmental data. When risk is high, the platform sends alerts and prevention tips to community members—always protecting privacy and confidentiality.
-      </Typography>
-      <Typography variant="h5" sx={{ mb: 2, color: '#1976d2' }}>Frequently Asked Questions</Typography>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>How is my data protected?</Typography>
-      <Typography variant="body2" sx={{ mb: 2 }}>We never store or share personal identifiers. All data is anonymized and used only for public health purposes.</Typography>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Who can report cases?</Typography>
-      <Typography variant="body2" sx={{ mb: 2 }}>Only verified healthcare professionals and clinics can report cases through the secure portal.</Typography>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>How do I receive alerts?</Typography>
-      <Typography variant="body2" sx={{ mb: 2 }}>Community members can sign up to receive alerts via email, SMS, or in-app notifications.</Typography>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>What if I see a duplicate case?</Typography>
-      <Typography variant="body2" sx={{ mb: 2 }}>The system uses privacy-preserving codes to help avoid duplicates, but no personal data is ever shared between clinics.</Typography>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>How can I get help?</Typography>
-      <Typography variant="body2" sx={{ mb: 2 }}>Visit the Community Dashboard for tips, or contact your nearest clinic listed there.</Typography>
+    <Box sx={{ mt: 4, mb: 8 }}>
+      <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, borderRadius: 4, background: 'linear-gradient(90deg, #f7fafc 60%, #e3f2fd 100%)' }}>
+        <Grid container spacing={4} alignItems="center" justifyContent="center">
+          <Grid item xs={12} md={6}>
+            <Box
+              component="img"
+              src="/about.jpg"
+              alt="About AfyaJirani"
+              sx={{
+                width: '100%',
+                maxHeight: 360,
+                objectFit: 'cover',
+                borderRadius: 3,
+                boxShadow: 3,
+                mb: { xs: 2, md: 0 },
+                display: 'block',
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h3" sx={{ mb: 2, color: '#1976d2', fontWeight: 700 }}>
+              About AfyaJirani
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2, fontSize: '1.15rem' }}>
+              <b style={{ color: '#43a047' }}>Empowering communities and healthcare providers</b> with timely, localized alerts and actionable advice during disease outbreaks—using AI, real-time data, and accessible technology.
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              <b>Our mission:</b> Save lives, inform the public, and support healthcare professionals with the tools they need to respond quickly and effectively.
+            </Typography>
+          </Grid>
+        </Grid>
+      </Paper>
+      <Box sx={{ my: 5 }}>
+        <Paper elevation={0} sx={{ p: { xs: 2, md: 4 }, background: '#f7fafc', borderRadius: 3 }}>
+          <Typography variant="h4" sx={{ mb: 3, color: '#43a047', fontWeight: 700, textAlign: 'center' }}>Why AfyaJirani?</Typography>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <Card elevation={2} sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+                <Typography variant="h5" sx={{ mb: 2, color: '#1976d2', fontWeight: 700 }}>
+                  <PeopleAltIcon sx={{ fontSize: 36, verticalAlign: 'middle', mr: 1 }} /> For Community Members
+                </Typography>
+                <List>
+                  <ListItem>
+                    <ListItemIcon><NotificationsActiveIcon sx={{ color: '#43a047' }} /></ListItemIcon>
+                    <ListItemText primary="Timely Outbreak Alerts" secondary="Get instant notifications about local disease outbreaks and health risks." />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon><HealthAndSafetyIcon sx={{ color: '#1976d2' }} /></ListItemIcon>
+                    <ListItemText primary="Stay Ahead of Diseases" secondary="Access prevention tips and health facts to protect yourself and your family." />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon><VolunteerActivismIcon sx={{ color: '#ffa726' }} /></ListItemIcon>
+                    <ListItemText primary="Community Support" secondary="Find clinics, helplines, and resources nearby. Connect with local health professionals." />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon><PeopleAltIcon sx={{ color: '#ab47bc' }} /></ListItemIcon>
+                    <ListItemText primary="Empower Your Community" secondary="Report outbreaks and help keep your neighborhood safe and informed." />
+                  </ListItem>
+                </List>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card elevation={2} sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+                <Typography variant="h5" sx={{ mb: 2, color: '#43a047', fontWeight: 700 }}>
+                  <LocalHospitalIcon sx={{ fontSize: 36, verticalAlign: 'middle', mr: 1 }} /> For Health Professionals
+                </Typography>
+                <List>
+                  <ListItem>
+                    <ListItemIcon><LocalHospitalIcon sx={{ color: '#1976d2' }} /></ListItemIcon>
+                    <ListItemText primary="Take Action Faster" secondary="Get real-time outbreak data to respond quickly and save lives." />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon><ThumbUpIcon sx={{ color: '#43a047' }} /></ListItemIcon>
+                    <ListItemText primary="Build Community Trust" secondary="Be a trusted source of information and support for your patients and community." />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon><FavoriteIcon sx={{ color: '#e53935' }} /></ListItemIcon>
+                    <ListItemText primary="Save More Lives" secondary="Access resources and tools to improve patient outcomes and public health." />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon><EmojiEventsIcon sx={{ color: '#ffa726' }} /></ListItemIcon>
+                    <ListItemText primary="Professional Recognition" secondary="Contribute to public health and be recognized for your impact." />
+                  </ListItem>
+                </List>
+              </Card>
+            </Grid>
+          </Grid>
+        </Paper>
+      </Box>
+      <Box sx={{ my: 5 }}>
+        <Typography variant="h5" sx={{ mb: 2, color: '#1976d2', fontWeight: 700 }}>How It Works</Typography>
+        <Typography variant="body1" sx={{ mb: 3 }}>
+          Healthcare professionals securely report cases. The system analyzes trends and predicts risks using AI and environmental data. When risk is high, the platform sends alerts and prevention tips to community members—always protecting privacy and confidentiality.
+        </Typography>
+      </Box>
+      <Box sx={{ my: 5 }}>
+        <Typography variant="h5" sx={{ mb: 2, color: '#43a047', fontWeight: 700 }}>Frequently Asked Questions</Typography>
+        <List>
+          <ListItem>
+            <ListItemText
+              primary={<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>How is my data protected?</Typography>}
+              secondary="We never store or share personal identifiers. All data is anonymized and used only for public health purposes."
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary={<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Who can report cases?</Typography>}
+              secondary="Only verified healthcare professionals and clinics can report cases through the secure portal."
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary={<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>How do I receive alerts?</Typography>}
+              secondary="Community members can sign up to receive alerts via email, SMS, or in-app notifications."
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary={<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>What if I see a duplicate case?</Typography>}
+              secondary="The system uses privacy-preserving codes to help avoid duplicates, but no personal data is ever shared between clinics."
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary={<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>How can I get help?</Typography>}
+              secondary="Visit the Community Dashboard for tips, or contact your nearest clinic listed there."
+            />
+          </ListItem>
+        </List>
+      </Box>
     </Box>
   );
 }
@@ -241,7 +361,7 @@ function Login() {
     if (error) {
       setError(error.message || 'Login failed');
     } else {
-      navigate('/'); // Redirect to home or dashboard
+      navigate('/'); // Redirect to home page after login
     }
     setSubmitting(false);
   };
@@ -330,6 +450,7 @@ function Signup() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -340,7 +461,23 @@ function Signup() {
     setSubmitting(true);
     setError(null);
     setSuccess(false);
-    const { error } = await signUp(email, password, role);
+    let hospital_id = undefined;
+    if (role === 'doctor') {
+      // Validate invite code
+      const { data, error: codeError } = await supabase
+        .from('hospitals')
+        .select('id')
+        .eq('invite_code', inviteCode.trim())
+        .single();
+      if (codeError || !data) {
+        setError('Invalid hospital invite code. Please check with your hospital admin.');
+        setSubmitting(false);
+        return;
+      }
+      hospital_id = data.id;
+    }
+    // Pass hospital_id in user metadata if doctor
+    const { error } = await signUp(email, password, role, hospital_id);
     if (error) {
       setError(error.message || 'Signup failed');
     } else {
@@ -382,6 +519,17 @@ function Signup() {
                 <MenuItem value="admin">Admin</MenuItem>
               </Select>
             </FormControl>
+            {role === 'doctor' && (
+              <TextField
+                label="Hospital Invite Code"
+                fullWidth
+                sx={{ mb: 2 }}
+                required
+                value={inviteCode}
+                onChange={e => setInviteCode(e.target.value)}
+                helperText="Ask your hospital admin for the invite code."
+              />
+            )}
             <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mb: 2 }} disabled={submitting || loading}>
               {submitting ? <CircularProgress size={24} /> : 'Sign Up'}
             </Button>
@@ -400,214 +548,80 @@ function Signup() {
   );
 }
 
-function DoctorDashboard() {
-  const [tab, setTab] = useState(0);
-  const [form, setForm] = useState({
-    disease: '',
-    symptoms: '',
-    location: '',
-    ageGroup: '',
-    gender: '',
-    date: new Date().toISOString().slice(0, 10),
-    patientCode: '',
-  });
+function CheckApplicationStatus() {
+  const [input, setInput] = useState('');
+  const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [trends, setTrends] = useState<{ cholera: number; malaria: number; covid: number } | null>(null);
-  const [trendsLoading, setTrendsLoading] = useState(false);
-  const [trendsError, setTrendsError] = useState<string | null>(null);
-  const handleTab = (_: any, newValue: number) => setTab(newValue);
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-  const handleSelectChange = (e: SelectChangeEvent) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    try {
-      const { data, error: supabaseError } = await supabase.from('cases').insert([
-        {
-          disease: form.disease,
-          symptoms: form.symptoms,
-          location: form.location,
-          age_group: form.ageGroup,
-          gender: form.gender,
-          date: form.date,
-          patient_code: form.patientCode || null,
-        },
-      ]);
-      if (supabaseError) throw supabaseError;
-      setSuccess(true);
-      setForm({ disease: '', symptoms: '', location: '', ageGroup: '', gender: '', date: new Date().toISOString().slice(0, 10), patientCode: '' });
-    } catch (err: any) {
-      setError(err.message || 'Submission failed.');
-    } finally {
+    setResult(null);
+    // Try to find by email or registration number
+    const { data, error: appError } = await supabase
+      .from('hospital_applications')
+      .select('*')
+      .or(`contact_email.eq.${input},registration_number.eq.${input}`)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (appError || !data || !data.length) {
+      setError('No application found for that email or registration number.');
       setLoading(false);
+      return;
     }
+    const app = data[0];
+    if (app.status === 'approved') {
+      // Find invite code from hospitals table
+      const { data: hospData, error: hospError } = await supabase
+        .from('hospitals')
+        .select('invite_code')
+        .eq('contact_email', app.contact_email)
+        .single();
+      setResult({ ...app, invite_code: hospData?.invite_code });
+    } else {
+      setResult(app);
+    }
+    setLoading(false);
   };
-  const fetchTrendsFromSupabase = async () => {
-    // Fetch counts for each disease
-    const diseases = ['Cholera', 'Malaria', 'COVID-19'];
-    const results: Record<string, number> = {};
-    for (const disease of diseases) {
-      const { count, error } = await supabase
-        .from('cases')
-        .select('*', { count: 'exact', head: true })
-        .eq('disease', disease);
-      if (error) {
-        throw error;
-      }
-      results[disease.toLowerCase()] = count || 0;
-    }
-    return results;
-  };
-  // Fetch trends when tab is selected
-  React.useEffect(() => {
-    if (tab === 1 && !trends && !trendsLoading) {
-      setTrendsLoading(true);
-      setTrendsError(null);
-      fetchTrendsFromSupabase()
-        .then((data) => setTrends(data as any))
-        .catch(() => setTrendsError('Failed to load trends.'))
-        .finally(() => setTrendsLoading(false));
-    }
-  }, [tab, trends, trendsLoading]);
-  return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h4" sx={{ mb: 2 }}>Doctor/Hospital Dashboard</Typography>
-      <Tabs value={tab} onChange={handleTab} sx={{ mb: 3 }} variant="scrollable" scrollButtons="auto">
-        <Tab label="Report Case" />
-        <Tab label="Trends" />
-        <Tab label="AI Risk" />
-      </Tabs>
-      {tab === 0 && (
-        <Card sx={{ maxWidth: 600, mx: 'auto' }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>Report New Case</Typography>
-            {error && <ErrorAlert message={error} />}
-            {loading ? <LoadingSpinner /> : (
-              <form onSubmit={handleSubmit}>
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Disease</InputLabel>
-                  <Select name="disease" value={form.disease} label="Disease" onChange={handleSelectChange} required>
-                    <MenuItem value="Cholera">Cholera</MenuItem>
-                    <MenuItem value="Malaria">Malaria</MenuItem>
-                    <MenuItem value="COVID-19">COVID-19</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField name="symptoms" label="Symptoms" value={form.symptoms} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
-                <TextField name="location" label="Location" value={form.location} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Age Group</InputLabel>
-                  <Select name="ageGroup" value={form.ageGroup} label="Age Group" onChange={handleSelectChange} required>
-                    <MenuItem value="Child">Child</MenuItem>
-                    <MenuItem value="Adult">Adult</MenuItem>
-                    <MenuItem value="Senior">Senior</MenuItem>
-                  </Select>
-                </FormControl>
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Gender</InputLabel>
-                  <Select name="gender" value={form.gender} label="Gender" onChange={handleSelectChange} required>
-                    <MenuItem value="Male">Male</MenuItem>
-                    <MenuItem value="Female">Female</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
-                    <MenuItem value="Prefer not to say">Prefer not to say</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField name="date" label="Date" type="date" value={form.date} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} required />
-                <TextField name="patientCode" label="Patient Code (optional, for deduplication)" value={form.patientCode} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} helperText="Do not use name or ID. Use a privacy-preserving code if available." />
-                <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>Submit Case</Button>
-              </form>
-            )}
-            <Snackbar open={success} autoHideDuration={3000} onClose={() => setSuccess(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-              <AlertSnackbar onClose={() => setSuccess(false)} severity="success" sx={{ width: '100%' }}>
-                Case reported successfully!
-              </AlertSnackbar>
-            </Snackbar>
-          </CardContent>
-        </Card>
-      )}
-      {tab === 1 && (
-        <Card sx={{ maxWidth: 600, mx: 'auto' }}>
-          <CardContent>
-            <Typography variant="h6">Outbreak Trends (Mock Data)</Typography>
-            {trendsLoading ? <LoadingSpinner /> : trendsError ? <ErrorAlert message={trendsError} /> : trends && (
-              <>
-                <Typography sx={{ mt: 2 }}>Cholera: {trends.cholera} cases this week</Typography>
-                <Typography>Malaria: {trends.malaria} cases this week</Typography>
-                <Typography>COVID-19: {trends.covid} cases this week</Typography>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-      {tab === 2 && (
-        <Card sx={{ maxWidth: 600, mx: 'auto' }}>
-          <CardContent>
-            <Typography variant="h6">AI Risk Prediction (Mock)</Typography>
-            <Typography sx={{ mt: 2 }}>Current risk level: <b>Moderate</b></Typography>
-            <Typography>Reason: Recent rainfall and increased malaria cases.</Typography>
-          </CardContent>
-        </Card>
-      )}
-    </Box>
-  );
-}
 
-function CommunityDashboard() {
-  const [loading, setLoading] = useState(false);
-  // Simulate loading for demonstration
-  React.useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h4" sx={{ mb: 2 }}>Community Dashboard</Typography>
-      {loading ? <LoadingSpinner /> : <>
-        {/* Outbreak Map Placeholder */}
-        <Card sx={{ mb: 4 }}>
-          <CardContent sx={{ textAlign: 'center' }}>
-            <MapIcon sx={{ fontSize: 60, color: '#1976d2', mb: 1 }} />
-            <Typography variant="h6">Outbreak Map (Coming Soon)</Typography>
-            <Typography variant="body2" sx={{ color: '#555' }}>
-              View current outbreak zones and affected areas in your community.
-            </Typography>
-          </CardContent>
-        </Card>
-        {/* Prevention Tips */}
-        <Typography variant="h6" sx={{ mb: 1, color: '#43a047' }}>Prevention Tips</Typography>
-        <List sx={{ mb: 4 }}>
-          <ListItem><ListItemText primary="Wash hands regularly with soap and water." /></ListItem>
-          <ListItem><ListItemText primary="Drink clean, safe water." /></ListItem>
-          <ListItem><ListItemText primary="Use mosquito nets to prevent malaria." /></ListItem>
-          <ListItem><ListItemText primary="Seek medical help if you have symptoms." /></ListItem>
-        </List>
-        {/* Nearby Clinics */}
-        <Typography variant="h6" sx={{ mb: 1, color: '#1976d2' }}>Nearby Clinics</Typography>
-        <List>
-          <ListItem>
-            <ListItemIcon><PlaceIcon color="primary" /></ListItemIcon>
-            <ListItemText primary="Jirani Health Center" secondary="123 Main St, YourTown" />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon><PlaceIcon color="primary" /></ListItemIcon>
-            <ListItemText primary="Community Clinic" secondary="456 Side Rd, YourTown" />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon><PlaceIcon color="primary" /></ListItemIcon>
-            <ListItemText primary="Hope Medical Facility" secondary="789 Hope Ave, YourTown" />
-          </ListItem>
-        </List>
-      </>}
+    <Box sx={{ mt: 8, maxWidth: 500, mx: 'auto' }}>
+      <Card>
+        <CardContent>
+          <Typography variant="h5" sx={{ mb: 2 }}>Check Application Status</Typography>
+          <form onSubmit={handleCheck}>
+            <TextField
+              label="Contact Email or Registration Number"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              fullWidth
+              required
+              sx={{ mb: 2 }}
+            />
+            <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>
+              {loading ? <CircularProgress size={24} /> : 'Check Status'}
+            </Button>
+          </form>
+          {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+          {result && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle1">Status: <b style={{ color: result.status === 'approved' ? '#43a047' : result.status === 'pending' ? '#ffa726' : '#e53935' }}>{result.status}</b></Typography>
+              {result.status === 'approved' && result.invite_code && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body1" sx={{ mb: 1 }}>Your hospital has been approved!</Typography>
+                  <Typography variant="body2">Invite Code:</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#1976d2', mb: 1 }}>{result.invite_code}</Typography>
+                  <Alert severity="info">Share this code with your professionals so they can register.</Alert>
+                </Box>
+              )}
+              {result.status === 'pending' && <Alert severity="warning" sx={{ mt: 2 }}>Your application is still pending review.</Alert>}
+              {result.status === 'rejected' && <Alert severity="error" sx={{ mt: 2 }}>Your application was rejected. Please contact support for more information.</Alert>}
+            </Box>
+          )}
+        </CardContent>
+      </Card>
     </Box>
   );
 }
@@ -696,31 +710,122 @@ function ResetPassword() {
 }
 
 // PrivateRoute component for protecting routes
-function PrivateRoute({ children }: { children: React.ReactElement }) {
+function PrivateRoute({ children, requiredRole, requireHospital }: { children: React.ReactElement, requiredRole?: string, requireHospital?: boolean }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingSpinner />;
-  return user ? children : <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (requiredRole && user.user_metadata?.role !== requiredRole) {
+    return (
+      <Box sx={{ mt: 8, textAlign: 'center' }}>
+        <Card sx={{ maxWidth: 400, mx: 'auto' }}>
+          <CardContent>
+            <Typography variant="h6" color="error" sx={{ mb: 2 }}>
+              Access Restricted
+            </Typography>
+            <Typography variant="body1">
+              This section is only accessible to verified healthcare professionals.<br/>
+              Please contact your hospital admin or support for access.
+            </Typography>
+            <Button variant="contained" sx={{ mt: 3 }} component={Link} to="/">Back to Home</Button>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+  if (requireHospital && !user.user_metadata?.hospital_id) {
+    return (
+      <Box sx={{ mt: 8, textAlign: 'center' }}>
+        <Card sx={{ maxWidth: 400, mx: 'auto' }}>
+          <CardContent>
+            <Typography variant="h6" color="error" sx={{ mb: 2 }}>
+              Access Restricted
+            </Typography>
+            <Typography variant="body1">
+              You must be linked to a registered hospital or clinic to access this section.<br/>
+              Please contact your hospital admin or support for access.
+            </Typography>
+            <Button variant="contained" sx={{ mt: 3 }} component={Link} to="/">Back to Home</Button>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+  return children;
 }
 
 function App() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [logoutSnackbar, setLogoutSnackbar] = useState(false);
+  // Remove tourMode state and Take a Tour button logic
+
+  // Auto-logout on session expiration
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || (!session && user)) {
+        setLogoutSnackbar(true);
+        navigate('/login');
+      }
+    });
+    return () => { listener?.subscription.unsubscribe(); };
+  }, [navigate, user]);
+
   const handleLogout = async () => {
     await signOut();
+    setLogoutSnackbar(true);
     navigate('/login');
   };
+  // Helper: is doctor
+  const isDoctor = user && user.user_metadata?.role === 'doctor';
+  const isAdmin = user && user.user_metadata?.role === 'admin';
+
+  // Dashboard drawer state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const handleDrawerOpen = () => setDrawerOpen(true);
+  const handleDrawerClose = () => setDrawerOpen(false);
+  const handleDrawerNav = (path: string) => {
+    navigate(path);
+    handleDrawerClose();
+  };
+
   return (
     <>
       <AppBar position="static" sx={{ backgroundColor: '#1976d2' }}>
         <Container maxWidth="lg">
           <Toolbar disableGutters>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center' }}>
+              {/* Dashboard Icon/Button - right before AfyaJirani, only when logged in */}
+              {user && (
+                <IconButton
+                  color="inherit"
+                  aria-label="dashboard menu"
+                  onClick={handleDrawerOpen}
+                  sx={{ ml: 0, mr: 1 }}
+                  size="large"
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
               <Button color="inherit" component={Link} to="/" sx={{ textTransform: 'none', fontWeight: 'bold', fontSize: 20 }}>
                 AfyaJirani
               </Button>
             </Typography>
+            {/* Dashboard Drawer (sidebar) */}
+            {user && (
+              <Drawer anchor="left" open={drawerOpen} onClose={handleDrawerClose}>
+                <Box sx={{ width: 250 }} role="presentation" onClick={handleDrawerClose} onKeyDown={handleDrawerClose}>
+                  <List>
+                    <ListItem button onClick={() => handleDrawerNav('/')}> <ListItemIcon><HomeIcon /></ListItemIcon> <ListItemText primary="Home" /> </ListItem>
+                    <ListItem button onClick={() => handleDrawerNav('/community')}> <ListItemIcon><PeopleIcon /></ListItemIcon> <ListItemText primary="Community" /> </ListItem>
+                    {isDoctor && <ListItem button onClick={() => handleDrawerNav('/professionals')}> <ListItemIcon><LocalHospitalIcon /></ListItemIcon> <ListItemText primary="Professionals" /> </ListItem>}
+                    {isAdmin && <ListItem button onClick={() => handleDrawerNav('/dashboard')}> <ListItemIcon><AdminPanelSettingsIcon /></ListItemIcon> <ListItemText primary="Admin" /> </ListItem>}
+                  </List>
+                </Box>
+              </Drawer>
+            )}
+            <Box sx={{ flexGrow: 1 }} />
             <Button color="inherit" component={Link} to="/">Home</Button>
-            <Button color="inherit" component={Link} to="/professionals">For Professionals</Button>
+            {isDoctor && <Button color="inherit" component={Link} to="/professionals">For Professionals</Button>}
             <Button color="inherit" component={Link} to="/community">For Community</Button>
             <Button color="inherit" component={Link} to="/about">About</Button>
             {!user && <Button color="inherit" component={Link} to="/login">Login</Button>}
@@ -730,16 +835,34 @@ function App() {
         </Container>
       </AppBar>
       <Container maxWidth="md" sx={{ mt: 4 }}>
+        {/* Home page content */}
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/professionals" element={<PrivateRoute><DoctorDashboard /></PrivateRoute>} />
-          <Route path="/community" element={<PrivateRoute><CommunityDashboard /></PrivateRoute>} />
+          <Route path="/" element={
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
+              <Typography variant="h3" gutterBottom>Welcome to AfyaJirani</Typography>
+              <Typography variant="h6" gutterBottom>Community Disease Outbreak Alerts & Health Resources</Typography>
+              {/* Removed Take a Tour button */}
+              <Home />
+            </Box>
+          } />
+          <Route path="/register-hospital" element={<HospitalRegistrationForm />} />
+          <Route path="/dashboard" element={<PrivateRoute><UnifiedDashboard /></PrivateRoute>} />
+          <Route path="/professionals" element={<PrivateRoute requiredRole="doctor" requireHospital><UnifiedDashboard initialTab="professionals" /></PrivateRoute>} />
+          <Route path="/community" element={
+            <PrivateRoute><UnifiedDashboard initialTab="community" /></PrivateRoute>
+          } />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/check-application-status" element={<CheckApplicationStatus />} />
         </Routes>
       </Container>
+      <Snackbar open={logoutSnackbar} autoHideDuration={3000} onClose={() => setLogoutSnackbar(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <AlertSnackbar onClose={() => setLogoutSnackbar(false)} severity="info" sx={{ width: '100%' }}>
+          You have been logged out.
+        </AlertSnackbar>
+      </Snackbar>
     </>
   );
 }

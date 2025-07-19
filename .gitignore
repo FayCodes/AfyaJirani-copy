@@ -1,0 +1,11 @@
+# Ignore node_modules for all JS/TS projects
+node_modules/ 
+venv/
+.env
+.env.*
+secrets.txt
+config.py
+
+# OS files
+.DS_Store
+Thumbs.db
