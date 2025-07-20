@@ -10,7 +10,11 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import InfoIcon from '@mui/icons-material/Info';
+import SendIcon from '@mui/icons-material/Send';
 import { usePrediction } from './hooks/usePrediction';
+import { useRisk } from './hooks/useRisk';
+import { useHotspots } from './hooks/useHotspots';
+import { usePersonalizedTips } from './hooks/usePersonalizedTips';
 
 function LoadingSpinner() {
   return (
@@ -40,16 +44,18 @@ const mockCases = [
 
 const mockHospital = {
   name: 'Jirani Health Center',
-  address: '123 Main St, YourTown',
-  contact: '0712345678',
+  address: '123 Main St, Nairobi',
+  contact: '+254 712 345678',
   status: 'Approved',
-  // Add logo or image here
+  logo: 'https://via.placeholder.com/80x80?text=Logo',
 };
 
 const mockResources = [
-  { name: 'Case Reporting Guidelines', link: '#' },
-  { name: 'Outbreak Response SOP', link: '#' },
-  { name: 'Downloadable Case Form', link: '#' },
+  { name: 'Case Reporting Guidelines (PDF)', link: 'https://www.who.int/publications/i/item/9789240011311' },
+  { name: 'Outbreak Response SOP', link: 'https://www.cdc.gov/coronavirus/2019-ncov/hcp/clinical-guidance-management-patients.html' },
+  { name: 'Downloadable Case Form', link: 'https://www.moh.gov.ke/wp-content/uploads/2020/03/Case-Investigation-Form.pdf' },
+  { name: 'Ministry of Health Updates', link: 'https://www.health.go.ke/' },
+  { name: 'WHO Disease Outbreak News', link: 'https://www.who.int/emergencies/disease-outbreak-news' },
 ];
 
 interface DoctorDashboardProps {
@@ -66,8 +72,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
     gender: '',
     date: new Date().toISOString().slice(0, 10),
     patientCode: '',
-    latitude: '',
-    longitude: '',
+    doctorName: '',
+    clinicName: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,13 +89,25 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
   const [hospital, setHospital] = useState<any>({});
   const [resources, setResources] = useState<any[]>([]);
   const [selectedDisease, setSelectedDisease] = useState('Cholera');
-  const { loading: predLoading, error: predError, data: predData } = usePrediction({ disease: selectedDisease, range: 7 });
+  const { loading: predLoading, error: predError, data: predData } = usePrediction({ disease: selectedDisease, predict_range: 7 });
+  const { loading: riskLoading, error: riskError, data: riskData } = useRisk({ location: 'Nairobi' });
+  const { loading: hotspotsLoading, error: hotspotsError, data: hotspotsData } = useHotspots({});
+  const { loading: tipsLoading, error: tipsError, data: tipsData } = usePersonalizedTips({ location: 'Nairobi' });
+
+  // --- Alert/Notification State ---
+  const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatients, setSelectedPatients] = useState<string[]>([]);
+  const [alertMessage, setAlertMessage] = useState('Hi, welcome to AfyaJirani!\nYour health, our priority.\nAfyaJirani connects you to trusted clinics, timely health alerts, and expert care—right in your community.');
+  const [alertChannel, setAlertChannel] = useState('whatsapp');
+  const [alertLoading, setAlertLoading] = useState(false);
+  const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
+  const [alertError, setAlertError] = useState<string | null>(null);
 
   // Use mock data if tourMode
   const casesToDisplay = tourMode ? MOCK_CASES : cases;
   const trendsToDisplay = tourMode ? MOCK_TRENDS : trends;
-  const hospitalToDisplay = tourMode ? MOCK_HOSPITAL : hospital;
-  const resourcesToDisplay = tourMode ? MOCK_RESOURCES : resources;
+  const hospitalToDisplay = (hospital && Object.keys(hospital).length > 0) ? hospital : mockHospital;
+  const resourcesToDisplay = (resources && resources.length > 0) ? resources : mockResources;
 
   const handleTab = (_: any, newValue: number) => setTab(newValue);
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -104,9 +122,12 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(false);
     try {
-      const { data, error: supabaseError } = await supabase.from('cases').insert([
-        {
+      const response = await fetch('http://localhost:8000/report-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           disease: form.disease,
           symptoms: form.symptoms,
           location: form.location,
@@ -114,13 +135,16 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
           gender: form.gender,
           date: form.date,
           patient_code: form.patientCode || null,
-          latitude: form.latitude ? parseFloat(form.latitude) : null,
-          longitude: form.longitude ? parseFloat(form.longitude) : null,
-        },
-      ]);
-      if (supabaseError) throw supabaseError;
+          doctor_name: form.doctorName,
+          clinic_name: form.clinicName,
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Submission failed.');
+      }
       setSuccess(true);
-      setForm({ disease: '', symptoms: '', location: '', ageGroup: '', gender: '', date: new Date().toISOString().slice(0, 10), patientCode: '', latitude: '', longitude: '' });
+      setForm({ disease: '', symptoms: '', location: '', ageGroup: '', gender: '', date: new Date().toISOString().slice(0, 10), patientCode: '', doctorName: '', clinicName: '' });
     } catch (err: any) {
       setError(err.message || 'Submission failed.');
     } finally {
@@ -188,6 +212,13 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
     setCasesByLocation(Object.values(locAgg));
   };
 
+  // Fetch patients on mount
+  useEffect(() => {
+    supabase.from('patients').select('*').then(({ data, error }) => {
+      if (!error && data) setPatients(data);
+    });
+  }, []);
+
   useEffect(() => {
     if (tab === 1 && !trendsLoading) {
       setTrendsLoading(true);
@@ -199,6 +230,15 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
     // eslint-disable-next-line
   }, [tab]);
 
+  // Custom dot for anomaly highlighting
+  const AnomalyDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    if (payload.anomaly) {
+      return <circle cx={cx} cy={cy} r={6} fill="#d32f2f" stroke="#fff" strokeWidth={1} />;
+    }
+    return null;
+  };
+
   return (
     <Box sx={{ mt: 4 }}>
       {tourMode && (
@@ -206,165 +246,135 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
           Tour Mode: Viewing as Professional (Read Only)
         </Alert>
       )}
-      <Typography variant="h4" sx={{ mb: 2 }}>Doctor/Hospital Dashboard</Typography>
-      <Tabs value={tab} onChange={handleTab} sx={{ mb: 3 }} variant="scrollable" scrollButtons="auto">
-        <Tab label="Report Case" icon={<AssignmentIcon />} iconPosition="start" />
-        <Tab label="Trends" icon={<TrendingUpIcon />} iconPosition="start" />
-        <Tab label="My Cases" icon={<DescriptionIcon />} iconPosition="start" />
-        <Tab label="Hospital Info" icon={<LocalHospitalIcon />} iconPosition="start" />
-        <Tab label="Resources" icon={<InfoIcon />} iconPosition="start" />
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: '#1976d2', letterSpacing: 1 }}>Doctor/Hospital Dashboard</Typography>
+      <Tabs
+        value={tab}
+        onChange={handleTab}
+        sx={{
+          mb: 4,
+          background: '#f5f5f5',
+          borderRadius: 2,
+          boxShadow: 1,
+          '.MuiTabs-flexContainer': {
+            justifyContent: { xs: 'center', md: 'flex-start' },
+            flexWrap: { xs: 'wrap', md: 'nowrap' },
+            gap: 1,
+          },
+        }}
+        variant="fullWidth"
+        TabIndicatorProps={{ style: { background: '#1976d2', height: 4, borderRadius: 2 } }}
+      >
+        <Tab label="Report Case" icon={<AssignmentIcon />} iconPosition="start" sx={{ fontWeight: 600, fontSize: 16, minWidth: 120 }} />
+        <Tab label="Trends" icon={<TrendingUpIcon />} iconPosition="start" sx={{ fontWeight: 600, fontSize: 16, minWidth: 120 }} />
+        <Tab label="My Cases" icon={<DescriptionIcon />} iconPosition="start" sx={{ fontWeight: 600, fontSize: 16, minWidth: 120 }} />
+        <Tab label="Send Alert" icon={<SendIcon />} iconPosition="start" sx={{ fontWeight: 600, fontSize: 16, minWidth: 120 }} />
+        <Tab label="Hospital Info" icon={<LocalHospitalIcon />} iconPosition="start" sx={{ fontWeight: 600, fontSize: 16, minWidth: 120 }} />
+        <Tab label="Resources" icon={<InfoIcon />} iconPosition="start" sx={{ fontWeight: 600, fontSize: 16, minWidth: 120 }} />
       </Tabs>
+      {/* Tab content styling improvements */}
       {tab === 0 && (
-        <Card sx={{ maxWidth: 600, mx: 'auto' }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>Report New Case</Typography>
-            {error && <ErrorAlert message={error} />}
-            {loading ? <LoadingSpinner /> : (
-              <form onSubmit={handleSubmit}>
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Disease</InputLabel>
-                  <Select name="disease" value={form.disease} label="Disease" onChange={handleSelectChange} required>
-                    <MenuItem value="Cholera">Cholera</MenuItem>
-                    <MenuItem value="Malaria">Malaria</MenuItem>
-                    <MenuItem value="COVID-19">COVID-19</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField name="symptoms" label="Symptoms" value={form.symptoms} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
-                <TextField name="location" label="Location" value={form.location} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Age Group</InputLabel>
-                  <Select name="ageGroup" value={form.ageGroup} label="Age Group" onChange={handleSelectChange} required>
-                    <MenuItem value="Child">Child</MenuItem>
-                    <MenuItem value="Adult">Adult</MenuItem>
-                    <MenuItem value="Senior">Senior</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField name="gender" label="Gender" value={form.gender} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
-                <TextField name="date" label="Date" type="date" value={form.date} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} required />
-                <TextField name="patientCode" label="Patient Code (optional)" value={form.patientCode} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} />
-                <TextField name="latitude" label="Latitude (optional)" value={form.latitude} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} helperText="If known, enter the latitude coordinate." />
-                <TextField name="longitude" label="Longitude (optional)" value={form.longitude} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} helperText="If known, enter the longitude coordinate." />
-                <Box sx={{ textAlign: 'right' }}>
-                  <Button type="submit" variant="contained" disabled={loading || tourMode}>
-                    Submit
-                  </Button>
-                </Box>
-              </form>
-            )}
-            {success && <Typography color="success.main" sx={{ mt: 2 }}>Case reported successfully!</Typography>}
-          </CardContent>
-        </Card>
+        <Paper elevation={4} sx={{ maxWidth: 700, mx: 'auto', p: { xs: 2, md: 4 }, mb: 4, borderRadius: 4, bgcolor: '#fff' }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#1976d2' }}>Report New Case</Typography>
+          {error && <ErrorAlert message={error} />}
+          {loading ? <LoadingSpinner /> : (
+            <form onSubmit={handleSubmit}>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Disease</InputLabel>
+                <Select name="disease" value={form.disease} label="Disease" onChange={handleSelectChange} required>
+                  <MenuItem value="Cholera">Cholera</MenuItem>
+                  <MenuItem value="Malaria">Malaria</MenuItem>
+                  <MenuItem value="COVID-19">COVID-19</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField name="symptoms" label="Symptoms" value={form.symptoms} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
+              <TextField name="location" label="Location" value={form.location} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Age Group</InputLabel>
+                <Select name="ageGroup" value={form.ageGroup} label="Age Group" onChange={handleSelectChange} required>
+                  <MenuItem value="Child">Child</MenuItem>
+                  <MenuItem value="Adult">Adult</MenuItem>
+                  <MenuItem value="Senior">Senior</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField name="gender" label="Gender" value={form.gender} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
+              <TextField name="date" label="Date" type="date" value={form.date} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} required />
+              <TextField name="doctorName" label="Doctor's Name" value={form.doctorName} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
+              <TextField name="clinicName" label="Clinic/Hospital Name" value={form.clinicName} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
+              <Box sx={{ textAlign: 'right', mt: 2 }}>
+                <Button type="submit" variant="contained" color="primary" sx={{ px: 4, py: 1.5, fontWeight: 600 }}>Submit</Button>
+              </Box>
+            </form>
+          )}
+        </Paper>
       )}
       {tab === 1 && (
-        <Box>
-          {/* Prediction Section */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>AI Prediction (Next 7 Days)</Typography>
-            <FormControl sx={{ minWidth: 180, mb: 2 }}>
-              <InputLabel>Disease</InputLabel>
-              <Select value={selectedDisease} label="Disease" onChange={e => setSelectedDisease(e.target.value)}>
-                <MenuItem value="Cholera">Cholera</MenuItem>
-                <MenuItem value="Malaria">Malaria</MenuItem>
-                <MenuItem value="COVID-19">COVID-19</MenuItem>
-                {/* Add more diseases as needed */}
-              </Select>
-            </FormControl>
-            {predLoading && <Typography>Loading prediction...</Typography>}
-            {predError && <Alert severity="error">{predError}</Alert>}
-            {predData && predData.predictions && (
-              <ReResponsiveContainer width="100%" height={220}>
-                <ReLineChart data={predData.predictions} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                  <ReCartesianGrid strokeDasharray="3 3" />
-                  <ReXAxis dataKey="days_from_now" tickFormatter={d => `+${d}d`} />
-                  <ReYAxis allowDecimals={false} />
-                  <ReTooltip />
-                  <ReLine type="monotone" dataKey="predicted_cases" stroke="#1976d2" name="Predicted Cases" />
-                </ReLineChart>
-              </ReResponsiveContainer>
-            )}
-          </Box>
-          <Card sx={{ maxWidth: 800, mx: 'auto' }}>
+        <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, mb: 4, borderRadius: 4, bgcolor: '#f8fafc' }}>
+          {/* AI Prediction Section */}
+          <Card sx={{ mb: 2, bgcolor: '#e8f5e9', boxShadow: 1, borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>Outbreak Trends</Typography>
-              {trendsLoading ? <LoadingSpinner /> : trendsError ? <ErrorAlert message={trendsError} /> : (
-                <Box>
-                  <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Cases Over Time</Typography>
-                  <ReResponsiveContainer width="100%" height={220}>
-                    <BarChart data={casesOverTime.length ? casesOverTime : [
-                      { date: 'Mon', Cholera: 1, Malaria: 2, COVID: 0 },
-                      { date: 'Tue', Cholera: 0, Malaria: 3, COVID: 1 },
-                      { date: 'Wed', Cholera: 2, Malaria: 1, COVID: 0 },
-                      { date: 'Thu', Cholera: 1, Malaria: 2, COVID: 1 },
-                      { date: 'Fri', Cholera: 0, Malaria: 2, COVID: 0 },
-                      { date: 'Sat', Cholera: 1, Malaria: 1, COVID: 0 },
-                      { date: 'Sun', Cholera: 0, Malaria: 1, COVID: 0 },
-                    ]} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <ReCartesianGrid strokeDasharray="3 3" />
-                      <ReXAxis dataKey="date" />
-                      <ReYAxis allowDecimals={false} />
-                      <ReTooltip />
-                      <Legend />
-                      <Bar dataKey="Cholera" fill="#43a047" />
-                      <Bar dataKey="Malaria" fill="#1976d2" />
-                      <Bar dataKey="COVID" fill="#e53935" />
-                    </BarChart>
-                  </ReResponsiveContainer>
-                  <Typography variant="subtitle1" sx={{ mt: 4, mb: 1 }}>Disease Distribution</Typography>
-                  <ReResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: 'Cholera', value: diseaseDist.cholera },
-                          { name: 'Malaria', value: diseaseDist.malaria },
-                          { name: 'COVID-19', value: diseaseDist.covid },
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={70}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label
-                      >
-                        <Cell key="Cholera" fill="#43a047" />
-                        <Cell key="Malaria" fill="#1976d2" />
-                        <Cell key="COVID-19" fill="#e53935" />
-                      </Pie>
-                      <ReTooltip />
-                      <Legend />
-                    </PieChart>
-                  </ReResponsiveContainer>
-                  <Typography variant="subtitle1" sx={{ mt: 4, mb: 1 }}>Cases by Location</Typography>
-                  <ReResponsiveContainer width="100%" height={220}>
-                    <BarChart data={casesByLocation.length ? casesByLocation : [
-                      { location: 'Nairobi', Cholera: 2, Malaria: 4, COVID: 1 },
-                      { location: 'Mombasa', Cholera: 1, Malaria: 2, COVID: 0 },
-                      { location: 'Kisumu', Cholera: 0, Malaria: 3, COVID: 1 },
-                    ]} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <ReCartesianGrid strokeDasharray="3 3" />
-                      <ReXAxis dataKey="location" />
-                      <ReYAxis allowDecimals={false} />
-                      <ReTooltip />
-                      <Legend />
-                      <Bar dataKey="Cholera" fill="#43a047" />
-                      <Bar dataKey="Malaria" fill="#1976d2" />
-                      <Bar dataKey="COVID" fill="#e53935" />
-                    </BarChart>
-                  </ReResponsiveContainer>
-                </Box>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: '#388e3c' }}>AI Prediction (7 days)</Typography>
+              {predLoading && <Typography>Loading prediction...</Typography>}
+              {predError && <Typography color="error">{predError}</Typography>}
+              {predData && predData.trend_explanation && (
+                <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 600, mb: 1 }}>{predData.trend_explanation}</Typography>
               )}
             </CardContent>
           </Card>
-        </Box>
+          {/* --- New Analytics Sections --- */}
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={12} md={4}>
+              <Card sx={{ bgcolor: '#fffde7', boxShadow: 1, borderRadius: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: '#fbc02d' }}>Risk Scores (Nairobi)</Typography>
+                  {riskLoading && <Typography>Loading risk scores...</Typography>}
+                  {riskError && <Typography color="error">{riskError}</Typography>}
+                  {riskData && riskData.risk_scores && Object.entries(riskData.risk_scores).map(([disease, info]: any) => (
+                    <Box key={disease} sx={{ mb: 1 }}>
+                      <b>{disease}</b>: <b>{info.risk}</b> (Recent: {info.recent_cases}, Avg: {info.avg_daily_cases})
+                    </Box>
+                  ))}
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Card sx={{ bgcolor: '#e3f2fd', boxShadow: 1, borderRadius: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: '#1976d2' }}>Hotspots</Typography>
+                  {hotspotsLoading && <Typography>Loading hotspots...</Typography>}
+                  {hotspotsError && <Typography color="error">{hotspotsError}</Typography>}
+                  {/* Add map or list of hotspots here */}
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+          <Typography variant="subtitle1" sx={{ mt: 4, mb: 1, fontWeight: 700 }}>Cases by Location</Typography>
+          <ReResponsiveContainer width="100%" height={220}>
+            <BarChart data={casesByLocation.length ? casesByLocation : [
+              { location: 'Nairobi', Cholera: 2, Malaria: 4, COVID: 1 },
+              { location: 'Mombasa', Cholera: 1, Malaria: 2, COVID: 0 },
+              { location: 'Kisumu', Cholera: 0, Malaria: 3, COVID: 1 },
+            ]} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <ReCartesianGrid strokeDasharray="3 3" />
+              <ReXAxis dataKey="location" />
+              <ReYAxis allowDecimals={false} />
+              <ReTooltip />
+              <Legend />
+              <Bar dataKey="Cholera" fill="#43a047" />
+              <Bar dataKey="Malaria" fill="#1976d2" />
+              <Bar dataKey="COVID" fill="#e53935" />
+            </BarChart>
+          </ReResponsiveContainer>
+        </Paper>
       )}
       {tab === 2 && (
-        <Box>
-          <Typography variant="h6" sx={{ mb: 2 }}>My Reported Cases</Typography>
+        <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, mb: 4, borderRadius: 4, bgcolor: '#fff' }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#1976d2' }}>My Reported Cases</Typography>
           <Grid container spacing={2}>
             {casesToDisplay.map((c: any) => (
               <Grid item xs={12} sm={6} md={4} key={c.id}>
-                <Paper elevation={2} sx={{ p: 2 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{c.disease}</Typography>
+                <Paper elevation={2} sx={{ p: 2, borderRadius: 2, bgcolor: '#f4f6fa' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{c.disease}</Typography>
                   <Typography variant="body2">Location: {c.location}</Typography>
                   <Typography variant="body2">Date: {c.date}</Typography>
                   <Typography variant="body2">Status: {c.status}</Typography>
@@ -372,26 +382,103 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
               </Grid>
             ))}
           </Grid>
-          {/* Suggestion: Add a table or export option for real data */}
-        </Box>
+        </Paper>
       )}
       {tab === 3 && (
-        <Box>
-          <Typography variant="h6" sx={{ mb: 2 }}>Hospital/Clinic Information</Typography>
-          <Card sx={{ maxWidth: 500, mb: 2 }}>
+        <Paper elevation={4} sx={{ maxWidth: 650, mx: 'auto', p: { xs: 2, md: 4 }, mb: 4, borderRadius: 4, bgcolor: '#fff' }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#1976d2' }}>Send WhatsApp Alert</Typography>
+            {alertError && <Alert severity="error" sx={{ mb: 2 }}>{alertError}</Alert>}
+            {alertSuccess && <Alert severity="success" sx={{ mb: 2 }}>{alertSuccess}</Alert>}
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 700 }}>Select Patients:</Typography>
+            <List dense sx={{ maxHeight: 180, overflow: 'auto', border: '1px solid #eee', mb: 2, borderRadius: 2 }}>
+              {patients.map((p: any) => (
+                <ListItem key={p.id} button onClick={() => {
+                  setSelectedPatients(selectedPatients.includes(p.id)
+                    ? selectedPatients.filter(id => id !== p.id)
+                    : [...selectedPatients, p.id]);
+                }} selected={selectedPatients.includes(p.id)}>
+                  <ListItemIcon>
+                    <input type="checkbox" checked={selectedPatients.includes(p.id)} readOnly />
+                  </ListItemIcon>
+                  <ListItemText primary={p.name || p.phone} secondary={p.phone} />
+                </ListItem>
+              ))}
+            </List>
+            <TextField
+              label="Message"
+              multiline
+              minRows={3}
+              value={alertMessage}
+              onChange={e => setAlertMessage(e.target.value)}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Channel</InputLabel>
+              <Select value={alertChannel} label="Channel" onChange={e => setAlertChannel(e.target.value)}>
+                <MenuItem value="whatsapp">WhatsApp</MenuItem>
+                <MenuItem value="sms">SMS</MenuItem>
+              </Select>
+            </FormControl>
+            <Box sx={{ textAlign: 'right' }}>
+              <Button
+                variant="contained"
+                endIcon={<SendIcon />}
+                disabled={alertLoading || selectedPatients.length === 0 || !alertMessage}
+                onClick={async () => {
+                  setAlertLoading(true);
+                  setAlertError(null);
+                  setAlertSuccess(null);
+                  try {
+                    const res = await fetch('http://localhost:8000/send-alert', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        patient_ids: selectedPatients,
+                        message: alertMessage,
+                        channel: alertChannel,
+                      }),
+                    });
+                    if (!res.ok) throw new Error('Failed to send alert');
+                    const data = await res.json();
+                    setAlertSuccess('Alert sent successfully!');
+                    setSelectedPatients([]);
+                  } catch (err: any) {
+                    setAlertError(err.message || 'Failed to send alert');
+                  } finally {
+                    setAlertLoading(false);
+                  }
+                }}
+                sx={{ px: 4, py: 1.5, fontWeight: 600 }}
+              >
+                Send
+              </Button>
+            </Box>
+          </CardContent>
+        </Paper>
+      )}
+      {tab === 4 && (
+        <Paper elevation={4} sx={{ maxWidth: 520, mb: 4, p: { xs: 2, md: 4 }, borderRadius: 4, bgcolor: '#fff' }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#1976d2' }}>Hospital/Clinic Information</Typography>
+          <Card sx={{ mb: 2, borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{hospitalToDisplay.name}</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{hospitalToDisplay.name}</Typography>
               <Typography variant="body2">Address: {hospitalToDisplay.address}</Typography>
               <Typography variant="body2">Contact: {hospitalToDisplay.contact}</Typography>
               <Typography variant="body2">Status: {hospitalToDisplay.status}</Typography>
-              {/* Add hospital logo or image here */}
+              {hospitalToDisplay.logo && (
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <img src={hospitalToDisplay.logo} alt="Hospital Logo" style={{ width: 80, height: 80, borderRadius: 8 }} />
+                </Box>
+              )}
             </CardContent>
           </Card>
-        </Box>
+        </Paper>
       )}
-      {tab === 4 && (
-        <Box>
-          <Typography variant="h6" sx={{ mb: 2 }}>Professional Resources</Typography>
+      {tab === 5 && (
+        <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, mb: 4, borderRadius: 4, bgcolor: '#fff' }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#1976d2' }}>Professional Resources</Typography>
           <List>
             {resourcesToDisplay.map((r: any, i: number) => (
               <ListItem key={i}>
@@ -401,8 +488,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
               </ListItem>
             ))}
           </List>
-          {/* Suggestion: Add downloadable files, links, or images here */}
-        </Box>
+        </Paper>
       )}
     </Box>
   );

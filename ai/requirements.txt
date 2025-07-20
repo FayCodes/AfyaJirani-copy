@@ -3,4 +3,8 @@ uvicorn
 pandas
 scikit-learn
 supabase
-joblib 
+joblib
+numpy
+python-dotenv
+pydantic
+twilio 

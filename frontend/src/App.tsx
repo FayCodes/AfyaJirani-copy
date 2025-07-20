@@ -714,7 +714,8 @@ function PrivateRoute({ children, requiredRole, requireHospital }: { children: R
   const { user, loading } = useAuth();
   if (loading) return <LoadingSpinner />;
   if (!user) return <Navigate to="/login" replace />;
-  if (requiredRole && user.user_metadata?.role !== requiredRole) {
+  // Allow admin to access doctor routes
+  if (requiredRole && ![requiredRole, 'admin'].includes(user.user_metadata?.role)) {
     return (
       <Box sx={{ mt: 8, textAlign: 'center' }}>
         <Card sx={{ maxWidth: 400, mx: 'auto' }}>

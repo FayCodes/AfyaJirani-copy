@@ -29,6 +29,9 @@ import {
   Tooltip as ReTooltip,
   ResponsiveContainer as ReResponsiveContainer
 } from 'recharts';
+import { useRisk } from './hooks/useRisk';
+import { useHotspots } from './hooks/useHotspots';
+import { usePersonalizedTips } from './hooks/usePersonalizedTips';
 
 function LoadingSpinner() {
   return (
@@ -116,7 +119,21 @@ const CommunityDashboard: React.FC<CommunityDashboardProps> = ({ tourMode }) => 
 
   // AI Prediction for Community
   const communityDisease = 'Malaria';
-  const { loading: aiLoading, error: aiError, data: aiData } = usePrediction({ disease: communityDisease, range: 7 });
+  const { loading: aiLoading, error: aiError, data: aiData } = usePrediction({ disease: communityDisease, predict_range: 7 });
+
+  // New AI/Analytics hooks
+  const { loading: riskLoading, error: riskError, data: riskData } = useRisk({ location: 'Nairobi' });
+  const { loading: hotspotsLoading, error: hotspotsError, data: hotspotsData } = useHotspots({});
+  const { loading: tipsLoading, error: tipsError, data: tipsData } = usePersonalizedTips({ location: 'Nairobi' });
+
+  // Custom dot for anomaly highlighting
+  const AnomalyDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    if (payload.anomaly) {
+      return <circle cx={cx} cy={cy} r={5} fill="#d32f2f" stroke="#fff" strokeWidth={1} />;
+    }
+    return null;
+  };
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#f4f6fa', px: 0, py: 0 }}>
@@ -164,11 +181,11 @@ const CommunityDashboard: React.FC<CommunityDashboardProps> = ({ tourMode }) => 
           variant="scrollable"
           scrollButtons={false}
         >
+          <Tab label="Outbreaks" icon={<MapIcon />} iconPosition="start" />
           <Tab label="Tips & Facts" icon={<InfoIcon />} iconPosition="start" />
           <Tab label="Clinics Nearby" icon={<LocalHospitalIcon />} iconPosition="start" />
           <Tab label="Helplines" icon={<PhoneIcon />} iconPosition="start" />
           <Tab label="FAQ" icon={<HelpIcon />} iconPosition="start" />
-          <Tab label="Outbreaks" icon={<MapIcon />} iconPosition="start" />
         </Tabs>
       </Box>
       {/* Main Content - no horizontal padding, flush with sidebar */}
@@ -177,116 +194,20 @@ const CommunityDashboard: React.FC<CommunityDashboardProps> = ({ tourMode }) => 
           <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
         ) : (
           <Box>
+            {/* Outbreaks Tab Content */}
             {tab === 0 && (
-              <Box sx={{ mb: 2, p: 1, borderRadius: 2, bgcolor: '#fcfdff', boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
-                <Typography variant="h4" sx={{ mb: 2, color: '#1976d2', fontWeight: 800, textAlign: { xs: 'center', md: 'left' }, fontSize: { xs: '1.2rem', md: '1.4rem' } }}>
-                  <InfoIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: '1.3rem' }} /> Prevention Tips & Health Facts
-                </Typography>
-                <List sx={{ bgcolor: 'transparent', width: '100%' }}>
-                  {tipsToDisplay.map((tip, i) => (
-                    <ListItem key={tip.id || i} sx={{ py: 0.5 }}>
-                      <ListItemIcon><InfoIcon color="primary" /></ListItemIcon>
-                      <ListItemText primary={tip.title} secondary={tip.content} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            )}
-            {tab === 1 && (
-              <Box sx={{ mb: 2, bgcolor: '#fcfdff', borderRadius: 2, p: 1, boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
-                <Typography variant="h4" sx={{ mb: 2, color: '#1976d2', fontWeight: 800, textAlign: { xs: 'center', md: 'left' }, fontSize: { xs: '1.2rem', md: '1.4rem' } }}>
-                  <LocalHospitalIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: '1.3rem' }} /> Clinics & Hospitals Near You
-                </Typography>
-                <Box sx={{ mb: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, width: '100%' }}>
-                  <TextField
-                    label="Search clinics/hospitals"
-                    value={clinicSearch}
-                    onChange={e => setClinicSearch(e.target.value)}
-                    size="small"
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{ minWidth: 140, maxWidth: 220, bgcolor: '#fff', borderRadius: 2, fontSize: { md: '0.95rem' }, width: { xs: '100%', sm: 'auto' } }}
-                  />
-                </Box>
-                <Grid container spacing={1}>
-                  {clinicsToDisplay.map((c, i) => (
-                    <Grid item xs={12} sm={6} md={4} key={c.id || i}>
-                      <Box sx={{ p: 1, bgcolor: '#fff', borderRadius: 2, height: '100%', boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: { xs: '1rem', md: '1.1rem' } }}>{c.name}</Typography>
-                        <Typography variant="body2">{c.address}</Typography>
-                        {c.contact && <Button variant="outlined" size="small" startIcon={<PhoneIcon />} href={`tel:${c.contact}`}>{c.contact}</Button>}
-                      </Box>
-                    </Grid>
-                  ))}
-                  {clinicsToDisplay.length === 0 && (
-                    <Grid item xs={12}><Typography>No clinics found.</Typography></Grid>
-                  )}
-                </Grid>
-              </Box>
-            )}
-            {tab === 2 && (
-              <Box sx={{ mb: 2, p: 1, borderRadius: 2, bgcolor: '#fcfdff', boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
-                <Typography variant="h4" sx={{ mb: 2, color: '#1976d2', fontWeight: 800, textAlign: { xs: 'center', md: 'left' }, fontSize: { xs: '1.2rem', md: '1.4rem' } }}>
-                  <PhoneIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: '1.3rem' }} /> Health Helplines
-                </Typography>
-                <List sx={{ bgcolor: 'transparent', width: '100%' }}>
-                  {helplinesToDisplay.map((h, i) => {
-                    let email = h.email;
-                    if (!email) {
-                      if (h.name?.toLowerCase().includes('malaria')) email = 'malaria-support@gmail.com';
-                      else if (h.name?.toLowerCase().includes('covid')) email = 'covid19-support@gmail.com';
-                      else if (h.name?.toLowerCase().includes('general')) email = 'general-health@gmail.com';
-                    }
-                    return (
-                      <ListItem key={h.id || i} alignItems="flex-start" sx={{ mb: 1, border: '1px solid #e0e0e0', borderRadius: 2, boxShadow: 1, py: 0.5, bgcolor: '#fff', width: '100%' }}>
-                        <Box sx={{ width: '100%' }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1976d2', fontSize: { xs: '1rem', md: '1.1rem' } }}>{h.name}</Typography>
-                          {h.description && <Typography variant="body2" sx={{ mb: 1 }}>{h.description}</Typography>}
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                            <PhoneIcon sx={{ mr: 1, color: '#43a047' }} />
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.phone || '-'}</Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <EmailIcon sx={{ mr: 1, color: '#1976d2' }} />
-                            {email ? (
-                              <a href={`mailto:${email}`} style={{ color: '#1976d2', textDecoration: 'underline', fontWeight: 500 }}>{email}</a>
-                            ) : <Typography variant="body2" sx={{ fontWeight: 500 }}>-</Typography>}
-                          </Box>
-                        </Box>
-                      </ListItem>
-                    );
-                  })}
-                </List>
-              </Box>
-            )}
-            {tab === 3 && (
-              <Box sx={{ mb: 2, p: 1, borderRadius: 2, bgcolor: '#fcfdff', boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
-                <Typography variant="h4" sx={{ mb: 2, color: '#1976d2', fontWeight: 800, textAlign: { xs: 'center', md: 'left' }, fontSize: { xs: '1.2rem', md: '1.4rem' } }}>
-                  <HelpIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: '1.3rem' }} /> Frequently Asked Questions
-                </Typography>
-                <List sx={{ bgcolor: 'transparent', width: '100%' }}>
-                  {faqsToDisplay.map((f, i) => (
-                    <ListItem key={f.id || i} alignItems="flex-start" sx={{ py: 0.5 }}>
-                      <ListItemIcon><HelpIcon color="primary" /></ListItemIcon>
-                      <ListItemText primary={f.question} secondary={f.answer} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            )}
-            {tab === 4 && (
               <Box sx={{ mb: 2 }}>
-                {/* AI Prediction Summary */}
+                {/* AI Prediction Summary and Outbreaks Section */}
                 <Box sx={{ mb: 2, p: 2, bgcolor: '#e8f5e9', borderRadius: 2, boxShadow: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
                   <InfoIcon color="success" sx={{ fontSize: 32 }} />
                   <Box sx={{ flex: 1 }}>
                     {aiLoading && <Typography>Loading AI prediction...</Typography>}
                     {aiError && <Typography color="error">{aiError}</Typography>}
+                    {aiData && aiData.trend_explanation && (
+                      <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 600, mb: 1 }}>
+                        {aiData.trend_explanation}
+                      </Typography>
+                    )}
                     {aiData && aiData.predictions && (
                       <>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#388e3c' }}>
@@ -298,6 +219,14 @@ const CommunityDashboard: React.FC<CommunityDashboardProps> = ({ tourMode }) => 
                               <ReXAxis dataKey="days_from_now" hide />
                               <ReYAxis hide />
                               <ReLine type="monotone" dataKey="predicted_cases" stroke="#388e3c" dot={false} strokeWidth={2} />
+                              {/* Highlight anomalies with red dots */}
+                              <ReLine
+                                dataKey="predicted_cases"
+                                stroke="none"
+                                dot={<AnomalyDot />}
+                                legendType="none"
+                                activeDot={false}
+                              />
                             </ReLineChart>
                           </ReResponsiveContainer>
                         </Box>
@@ -305,6 +234,52 @@ const CommunityDashboard: React.FC<CommunityDashboardProps> = ({ tourMode }) => 
                     )}
                   </Box>
                 </Box>
+                {/* --- New Analytics Sections --- */}
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid item xs={12} md={4}>
+                    <Card sx={{ bgcolor: '#fffde7', boxShadow: 1 }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ mb: 1 }}>Risk Scores (Nairobi)</Typography>
+                        {riskLoading && <Typography>Loading risk scores...</Typography>}
+                        {riskError && <Typography color="error">{riskError}</Typography>}
+                        {riskData && riskData.risk_scores && Object.entries(riskData.risk_scores).map(([disease, info]: any) => (
+                          <Box key={disease} sx={{ mb: 1 }}>
+                            <Chip label={disease} sx={{ mr: 1 }} />
+                            <b>{info.risk}</b> (Recent: {info.recent_cases}, Avg: {info.avg_daily_cases})
+                          </Box>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Card sx={{ bgcolor: '#e3f2fd', boxShadow: 1 }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ mb: 1 }}>Hotspots (7 days)</Typography>
+                        {hotspotsLoading && <Typography>Loading hotspots...</Typography>}
+                        {hotspotsError && <Typography color="error">{hotspotsError}</Typography>}
+                        {hotspotsData && hotspotsData.hotspots && hotspotsData.hotspots.length === 0 && <Typography>No hotspots detected.</Typography>}
+                        {hotspotsData && hotspotsData.hotspots && hotspotsData.hotspots.map((h: any, i: number) => (
+                          <Box key={i} sx={{ mb: 1 }}>
+                            <Chip label={h.disease} sx={{ mr: 1 }} />
+                            <b>{h.location}</b>: {h.cases} cases (<b>{h.risk}</b>)
+                          </Box>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Card sx={{ bgcolor: '#f3e5f5', boxShadow: 1 }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ mb: 1 }}>Personalized Tips (Nairobi)</Typography>
+                        {tipsLoading && <Typography>Loading tips...</Typography>}
+                        {tipsError && <Typography color="error">{tipsError}</Typography>}
+                        {tipsData && tipsData.tips && tipsData.tips.map((tip: string, i: number) => (
+                          <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>• {tip}</Typography>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
                 {/* Outbreaks Section continues... */}
                 <Box sx={{ mb: 2, bgcolor: '#fcfdff', borderRadius: 2, p: 1, boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
                   <Typography variant="h4" sx={{ mb: 2, color: '#1976d2', fontWeight: 800, textAlign: { xs: 'center', md: 'left' }, fontSize: { xs: '1.2rem', md: '1.4rem' } }}>
@@ -390,6 +365,112 @@ const CommunityDashboard: React.FC<CommunityDashboardProps> = ({ tourMode }) => 
                     )}
                   </Grid>
                 </Box>
+              </Box>
+            )}
+            {/* Tips & Facts Tab Content */}
+            {tab === 1 && (
+              <Box sx={{ mb: 2, p: 1, borderRadius: 2, bgcolor: '#fcfdff', boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
+                <Typography variant="h4" sx={{ mb: 2, color: '#1976d2', fontWeight: 800, textAlign: { xs: 'center', md: 'left' }, fontSize: { xs: '1.2rem', md: '1.4rem' } }}>
+                  <InfoIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: '1.3rem' }} /> Prevention Tips & Health Facts
+                </Typography>
+                <List sx={{ bgcolor: 'transparent', width: '100%' }}>
+                  {tipsToDisplay.map((tip, i) => (
+                    <ListItem key={tip.id || i} sx={{ py: 0.5 }}>
+                      <ListItemIcon><InfoIcon color="primary" /></ListItemIcon>
+                      <ListItemText primary={tip.title} secondary={tip.content} />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+            {/* Clinics Nearby Tab Content */}
+            {tab === 2 && (
+              <Box sx={{ mb: 2, p: 1, borderRadius: 2, bgcolor: '#fcfdff', boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
+                <Typography variant="h4" sx={{ mb: 2, color: '#1976d2', fontWeight: 800, textAlign: { xs: 'center', md: 'left' }, fontSize: { xs: '1.2rem', md: '1.4rem' } }}>
+                  <LocalHospitalIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: '1.3rem' }} /> Clinics & Hospitals Near You
+                </Typography>
+                <Box sx={{ mb: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, width: '100%' }}>
+                  <TextField
+                    label="Search clinics/hospitals"
+                    value={clinicSearch}
+                    onChange={e => setClinicSearch(e.target.value)}
+                    size="small"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ minWidth: 140, maxWidth: 220, bgcolor: '#fff', borderRadius: 2, fontSize: { md: '0.95rem' }, width: { xs: '100%', sm: 'auto' } }}
+                  />
+                </Box>
+                <Grid container spacing={1}>
+                  {clinicsToDisplay.map((c, i) => (
+                    <Grid item xs={12} sm={6} md={4} key={c.id || i}>
+                      <Box sx={{ p: 1, bgcolor: '#fff', borderRadius: 2, height: '100%', boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: { xs: '1rem', md: '1.1rem' } }}>{c.name}</Typography>
+                        <Typography variant="body2">{c.address}</Typography>
+                        {c.contact && <Button variant="outlined" size="small" startIcon={<PhoneIcon />} href={`tel:${c.contact}`}>{c.contact}</Button>}
+                      </Box>
+                    </Grid>
+                  ))}
+                  {clinicsToDisplay.length === 0 && (
+                    <Grid item xs={12}><Typography>No clinics found.</Typography></Grid>
+                  )}
+                </Grid>
+              </Box>
+            )}
+            {/* Helplines Tab Content */}
+            {tab === 3 && (
+              <Box sx={{ mb: 2, p: 1, borderRadius: 2, bgcolor: '#fcfdff', boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
+                <Typography variant="h4" sx={{ mb: 2, color: '#1976d2', fontWeight: 800, textAlign: { xs: 'center', md: 'left' }, fontSize: { xs: '1.2rem', md: '1.4rem' } }}>
+                  <PhoneIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: '1.3rem' }} /> Health Helplines
+                </Typography>
+                <List sx={{ bgcolor: 'transparent', width: '100%' }}>
+                  {helplinesToDisplay.map((h, i) => {
+                    let email = h.email;
+                    if (!email) {
+                      if (h.name?.toLowerCase().includes('malaria')) email = 'malaria-support@gmail.com';
+                      else if (h.name?.toLowerCase().includes('covid')) email = 'covid19-support@gmail.com';
+                      else if (h.name?.toLowerCase().includes('general')) email = 'general-health@gmail.com';
+                    }
+                    return (
+                      <ListItem key={h.id || i} alignItems="flex-start" sx={{ mb: 1, border: '1px solid #e0e0e0', borderRadius: 2, boxShadow: 1, py: 0.5, bgcolor: '#fff', width: '100%' }}>
+                        <Box sx={{ width: '100%' }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1976d2', fontSize: { xs: '1rem', md: '1.1rem' } }}>{h.name}</Typography>
+                          {h.description && <Typography variant="body2" sx={{ mb: 1 }}>{h.description}</Typography>}
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                            <PhoneIcon sx={{ mr: 1, color: '#43a047' }} />
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.phone || '-'}</Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <EmailIcon sx={{ mr: 1, color: '#1976d2' }} />
+                            {email ? (
+                              <a href={`mailto:${email}`} style={{ color: '#1976d2', textDecoration: 'underline', fontWeight: 500 }}>{email}</a>
+                            ) : <Typography variant="body2" sx={{ fontWeight: 500 }}>-</Typography>}
+                          </Box>
+                        </Box>
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              </Box>
+            )}
+            {/* FAQ Tab Content */}
+            {tab === 4 && (
+              <Box sx={{ mb: 2, p: 1, borderRadius: 2, bgcolor: '#fcfdff', boxShadow: 1, border: '1px solid #e3e8ee', width: '100%' }}>
+                <Typography variant="h4" sx={{ mb: 2, color: '#1976d2', fontWeight: 800, textAlign: { xs: 'center', md: 'left' }, fontSize: { xs: '1.2rem', md: '1.4rem' } }}>
+                  <HelpIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: '1.3rem' }} /> Frequently Asked Questions
+                </Typography>
+                <List sx={{ bgcolor: 'transparent', width: '100%' }}>
+                  {faqsToDisplay.map((f, i) => (
+                    <ListItem key={f.id || i} alignItems="flex-start" sx={{ py: 0.5 }}>
+                      <ListItemIcon><HelpIcon color="primary" /></ListItemIcon>
+                      <ListItemText primary={f.question} secondary={f.answer} />
+                    </ListItem>
+                  ))}
+                </List>
               </Box>
             )}
           </Box>

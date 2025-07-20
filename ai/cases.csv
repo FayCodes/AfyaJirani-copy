@@ -1,0 +1,14 @@
+id,disease,symptoms,location,age_group,gender,date,patient_code,created_at,latitude,longitude,cases
+1,Cholera,"fever, cough",Embakasi East,Adult,Female,2024-06-10,P999,2025-07-19T12:38:09.8331+00:00,-1.32,36.9,5
+2,Malaria,"fever, cough",Westlands,Adult,Female,2024-06-11,P999,2025-07-19T12:38:09.8331+00:00,-1.2647,36.8121,3
+3,COVID-19,"fever, cough",Kibra,Adult,Female,2024-06-12,P999,2025-07-19T12:38:09.8331+00:00,-1.3092,36.7831,2
+4,Cholera,"fever, cough",Kasarani,Adult,Female,2024-06-13,P999,2025-07-19T12:38:09.8331+00:00,-1.2195,36.8961,4
+6,Cholera,"fever, cough",Embakasi East,Adult,Female,2024-06-10,P999,2025-07-20T10:22:50.888184+00:00,-1.32,36.9,5
+7,Malaria,"fever, cough",Westlands,Adult,Female,2024-06-11,P999,2025-07-20T10:22:50.888184+00:00,-1.2647,36.8121,3
+8,COVID-19,"fever, cough",Kibra,Adult,Female,2024-06-12,P999,2025-07-20T10:22:50.888184+00:00,-1.3092,36.7831,2
+9,Cholera,"fever, cough",Kasarani,Adult,Female,2024-06-13,P999,2025-07-20T10:22:50.888184+00:00,-1.2195,36.8961,4
+11,Malaria,"fever, chills",Nairobi,Adult,Male,2024-06-01,P001,2025-07-20T10:23:27.451184+00:00,-1.2864,36.8172,5
+12,Cholera,"diarrhea, cramps",Mombasa,Child,Female,2024-06-02,P002,2025-07-20T10:23:27.451184+00:00,-4.0435,39.6682,5
+13,COVID-19,"cough, fever",Kisumu,Senior,Male,2024-06-03,P003,2025-07-20T10:23:27.451184+00:00,-0.0917,34.768,5
+5,Malaria,"fever, cough",Lang’ata,Adult,Female,2024-06-14,P999,2025-07-19T12:38:09.8331+00:00,-1.3621,36.7517,5
+10,Malaria,"fever, cough",Lang’ata,Adult,Female,2024-06-14,P999,2025-07-20T10:22:50.888184+00:00,-1.3621,36.7517,5
