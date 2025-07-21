@@ -62,6 +62,8 @@ import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import EmailIcon from '@mui/icons-material/Email';
+import PhoneIcon from '@mui/icons-material/Phone';
 
 // Mock API service
 const mockApi = {
@@ -758,6 +760,8 @@ function App() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [logoutSnackbar, setLogoutSnackbar] = useState(false);
+  // Add a global error snackbar state and handler
+  const [globalError, setGlobalError] = useState<string | null>(null);
   // Remove tourMode state and Take a Tour button logic
 
   // Auto-logout on session expiration
@@ -864,6 +868,42 @@ function App() {
           You have been logged out.
         </AlertSnackbar>
       </Snackbar>
+      {/* Footer */}
+      <Box component="footer" sx={{
+        width: '100vw',
+        bgcolor: '#1976d2',
+        color: '#fff',
+        py: { xs: 3, md: 4 },
+        px: 2,
+        borderTop: '1px solid #e0e0e0',
+        textAlign: 'center',
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        zIndex: 1200,
+        boxShadow: '0 -2px 8px rgba(25, 118, 210, 0.08)',
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2,
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1, sm: 0 } }}>
+          <EmailIcon sx={{ mr: 0.5, fontSize: 20 }} />
+          <Typography variant="body2" component="span">
+            <a href="mailto:AfyaJirani@gmail.com" style={{ color: '#fff', textDecoration: 'underline', fontWeight: 500 }}>AfyaJirani@gmail.com</a>
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: { sm: 3 } }}>
+          <PhoneIcon sx={{ mr: 0.5, fontSize: 20 }} />
+          <Typography variant="body2" component="span">
+            <a href="tel:+254700000000" style={{ color: '#fff', textDecoration: 'underline', fontWeight: 500 }}>+254 700 000000</a>
+          </Typography>
+        </Box>
+        <Typography variant="caption" color="#e3f2fd" sx={{ mt: { xs: 1, sm: 0 }, ml: { sm: 3 }, display: 'block', fontWeight: 400 }}>
+          &copy; {new Date().getFullYear()} AfyaJirani. All rights reserved.
+        </Typography>
+      </Box>
     </>
   );
 }

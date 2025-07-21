@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, HTTPException, Body
+from fastapi import FastAPI, Query, HTTPException, Body, Header
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import numpy as np
@@ -11,6 +11,23 @@ from supabase import create_client, Client
 from twilio.rest import Client as TwilioClient
 from dotenv import load_dotenv
 load_dotenv()
+import os
+import logging
+from datetime import datetime
+from backend.audit_log import log_audit
+# Remove secret print statements
+print("CWD:", os.getcwd())
+print("ENV FILE EXISTS:", os.path.exists(".env"))
+# CORS setup
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://your-production-frontend.com"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+from ai.mpesa import router as mpesa_router
 
 app = FastAPI()
 
@@ -206,7 +223,9 @@ class AlertRequest(BaseModel):
     channel: str = 'sms'  # 'sms' or 'whatsapp'
 
 @app.post("/send-alert")
-def send_alert(request: AlertRequest):
+def send_alert(request: AlertRequest, x_api_key: str = Header(...)):
+    verify_api_key(x_api_key)
+    log_audit('send_alert', 'API_KEY', str(request.dict()))
     try:
         print("Received alert request:", request)
         # Supabase setup
@@ -270,7 +289,9 @@ class CaseReportRequest(BaseModel):
     clinic_name: str
 
 @app.post("/report-case")
-def report_case(request: CaseReportRequest):
+def report_case(request: CaseReportRequest, x_api_key: str = Header(...)):
+    verify_api_key(x_api_key)
+    log_audit('report_case', 'API_KEY', str(request.dict()))
     SUPABASE_URL = os.environ.get('SUPABASE_URL')
     SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
     if not SUPABASE_URL or not SUPABASE_KEY:
@@ -295,3 +316,5 @@ def report_case(request: CaseReportRequest):
         return {"success": True, "case_id": response.data[0]["id"] if response.data else None}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
+
+app.include_router(mpesa_router) 

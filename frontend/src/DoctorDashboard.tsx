@@ -275,7 +275,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
       {tab === 0 && (
         <Paper elevation={4} sx={{ maxWidth: 700, mx: 'auto', p: { xs: 2, md: 4 }, mb: 4, borderRadius: 4, bgcolor: '#fff' }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#1976d2' }}>Report New Case</Typography>
-          {error && <ErrorAlert message={error} />}
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
           {loading ? <LoadingSpinner /> : (
             <form onSubmit={handleSubmit}>
               <FormControl fullWidth sx={{ mb: 2 }}>
@@ -302,7 +303,16 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
               <TextField name="doctorName" label="Doctor's Name" value={form.doctorName} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
               <TextField name="clinicName" label="Clinic/Hospital Name" value={form.clinicName} onChange={handleInputChange} fullWidth sx={{ mb: 2 }} required />
               <Box sx={{ textAlign: 'right', mt: 2 }}>
-                <Button type="submit" variant="contained" color="primary" sx={{ px: 4, py: 1.5, fontWeight: 600 }}>Submit</Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  disabled={loading}
+                  sx={{ py: 1.5, fontWeight: 600 }}
+                >
+                  {loading ? <CircularProgress size={24} /> : 'Report Case'}
+                </Button>
               </Box>
             </form>
           )}
@@ -433,7 +443,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
                   try {
                     const res = await fetch('http://localhost:8000/send-alert', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 'Content-Type': 'application/json', 'x-api-key': 'testkey' },
                       body: JSON.stringify({
                         patient_ids: selectedPatients,
                         message: alertMessage,
@@ -452,7 +462,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
                 }}
                 sx={{ px: 4, py: 1.5, fontWeight: 600 }}
               >
-                Send
+                {alertLoading ? <CircularProgress size={20} /> : 'Send'}
               </Button>
             </Box>
           </CardContent>
