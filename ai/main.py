@@ -18,8 +18,10 @@ from backend.audit_log import log_audit
 # Remove secret print statements
 print("CWD:", os.getcwd())
 print("ENV FILE EXISTS:", os.path.exists(".env"))
+
+app = FastAPI()  # <-- Move this to the top before any use of 'app'
+
 # CORS setup
-from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "https://your-production-frontend.com"],
@@ -28,17 +30,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 from ai.mpesa import router as mpesa_router
-
-app = FastAPI()
-
-# Enable CORS for all origins
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Load available diseases
 with open('ai/diseases.txt') as f:
