@@ -24,7 +24,7 @@ app.add_middleware(
 )
 
 # Load available diseases
-with open('diseases.txt') as f:
+with open('ai/diseases.txt') as f:
     DISEASES = [line.strip() for line in f if line.strip()]
 
 # Helper to load model and start_date for a disease
