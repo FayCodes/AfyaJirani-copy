@@ -1,4 +1,4 @@
-# AfyaJirani
+# AfyaJirani (Project live link: https://afya-jirani.vercel.app/ )
 
 AfyaJirani is a comprehensive, community-driven disease outbreak alert and health management platform. It leverages AI, secure data reporting, and real-time communication to empower communities, healthcare professionals, and administrators to respond rapidly to public health threats.
 
