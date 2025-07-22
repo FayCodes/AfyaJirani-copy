@@ -9,3 +9,4 @@ config.py
 # OS files
 .DS_Store
 Thumbs.db
+audit.log
