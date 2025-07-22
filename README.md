@@ -44,8 +44,8 @@ AfyaJirani bridges the gap between communities and healthcare systems by providi
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/AfyaJirani.git
-cd AfyaJirani
+git clone https://github.com/yourusername/AfyaJirani-copy.git
+cd AfyaJirani-copy
 ```
 
 ### 2. Environment Variables
