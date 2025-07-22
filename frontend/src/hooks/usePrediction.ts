@@ -18,7 +18,7 @@ export function usePrediction({ disease, daysFromNow, range, predict_range }: { 
     } else if (range !== undefined) {
       params.append('predict_range', String(range));
     }
-    fetch(`http://localhost:8000/predict?${params.toString()}`)
+    fetch(`${process.env.REACT_APP_API_URL}/predict?${params.toString()}`)
       .then(res => {
         if (!res.ok) throw new Error('Prediction API error');
         return res.json();

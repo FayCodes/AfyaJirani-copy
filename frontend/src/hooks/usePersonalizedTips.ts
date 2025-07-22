@@ -11,7 +11,7 @@ export function usePersonalizedTips({ location }: { location?: string }) {
     setData(null);
     const params = new URLSearchParams();
     if (location) params.append('location', location);
-    fetch(`http://localhost:8000/personalized-tips?${params.toString()}`)
+    fetch(`${process.env.REACT_APP_API_URL}/personalized-tips?${params.toString()}`)
       .then(res => {
         if (!res.ok) throw new Error('Personalized Tips API error');
         return res.json();

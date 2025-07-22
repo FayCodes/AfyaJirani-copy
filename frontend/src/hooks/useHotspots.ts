@@ -12,7 +12,7 @@ export function useHotspots({ days = 7, min_cases = 3 }: { days?: number, min_ca
     const params = new URLSearchParams();
     if (days !== undefined) params.append('days', String(days));
     if (min_cases !== undefined) params.append('min_cases', String(min_cases));
-    fetch(`http://localhost:8000/hotspots?${params.toString()}`)
+    fetch(`${process.env.REACT_APP_API_URL}/hotspots?${params.toString()}`)
       .then(res => {
         if (!res.ok) throw new Error('Hotspots API error');
         return res.json();

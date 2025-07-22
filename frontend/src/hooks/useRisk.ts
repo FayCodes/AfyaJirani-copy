@@ -12,7 +12,7 @@ export function useRisk({ location, days = 14 }: { location?: string, days?: num
     const params = new URLSearchParams();
     if (location) params.append('location', location);
     if (days !== undefined) params.append('days', String(days));
-    fetch(`http://localhost:8000/risk?${params.toString()}`)
+    fetch(`${process.env.REACT_APP_API_URL}/risk?${params.toString()}`)
       .then(res => {
         if (!res.ok) throw new Error('Risk API error');
         return res.json();

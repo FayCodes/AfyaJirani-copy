@@ -124,7 +124,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
     setError(null);
     setSuccess(false);
     try {
-      const response = await fetch('http://localhost:8000/report-case', {
+      const API_URL = process.env.REACT_APP_API_URL;
+      const response = await fetch(`${API_URL}/report-case`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -441,7 +442,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ tourMode }) => {
                   setAlertError(null);
                   setAlertSuccess(null);
                   try {
-                    const res = await fetch('http://localhost:8000/send-alert', {
+                    const API_URL = process.env.REACT_APP_API_URL;
+                    const res = await fetch(`${API_URL}/send-alert`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json', 'x-api-key': 'testkey' },
                       body: JSON.stringify({

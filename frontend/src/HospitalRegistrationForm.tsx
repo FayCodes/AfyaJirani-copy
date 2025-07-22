@@ -34,7 +34,8 @@ export default function HospitalRegistrationForm() {
     // 1. Initiate payment first
     setPaymentLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/mpesa/stkpush', {
+      const API_URL = process.env.REACT_APP_API_URL;
+      const res = await fetch(`${API_URL}/mpesa/stkpush`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: form.phone, amount: ONBOARDING_FEE }),
